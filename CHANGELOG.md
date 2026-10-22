@@ -12,6 +12,12 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
 - Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
 
+## [0.4.2]
+
+### Cambiado
+
+- Logos `client-logo-DAVH.svg` y `provider-logo-DAVH.svg` vectorizados a partir de `logo.png` (color, con viewBox). Ahora aparecen también en el DXF.
+
 ## [0.4.1]
 
 ### Cambiado
