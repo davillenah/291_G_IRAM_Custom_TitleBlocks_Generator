@@ -12,6 +12,17 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
 - Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
 
+## [0.4.1]
+
+### Cambiado
+
+- Logos de cliente y proveedor: `client-logo-DAVH.svg` y `provider-logo-DAVH.svg` reemplazan a FORD y EnergySapiens.
+
+### Corregido
+
+- Los logos en PNG incrustados en SVG no se mostraban en el rótulo: al limpiar el logo se perdía el enlace `xlink:href`.
+- Logos sin `viewBox` se escalan a partir de `width` y `height`.
+
 ## [0.4.0]
 
 ### Cambiado

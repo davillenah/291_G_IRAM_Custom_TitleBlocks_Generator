@@ -24,6 +24,7 @@ Unidades mm, origen arriba-izquierda. Uso: python3 sheet-generator.py A0|A1|A2|A
 Genera también title-block-IRAM4508.svg y modifications-block-IRAM4508.svg junto a la salida.
 """
 import glob
+import re
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -55,6 +56,8 @@ FONT = "osifont, ISOCPEUR, 'DejaVu Sans', Arial, sans-serif"
 BASE = os.environ.get("IRAM_PROYECTO") or os.path.dirname(os.path.abspath(__file__))
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
+XLINK_NS = "http://www.w3.org/1999/xlink"
+ET.register_namespace("xlink", XLINK_NS)
 
 
 def buscar_logo(prefijo):
@@ -70,8 +73,14 @@ def logo_anidado(path, x, y, w, h, gid):
     Se quitan los metadatos de Inkscape/Sodipodi, que no son SVG estándar."""
     root = ET.parse(path).getroot()
     vb = root.get("viewBox")
-    if not vb:
-        raise ValueError(f"{os.path.basename(path)} no tiene viewBox")
+    if vb:
+        vx, vy, vw, vh = (float(v) for v in vb.replace(",", " ").split())
+    elif root.get("width") and root.get("height"):
+        # logo sin viewBox (p. ej. PNG incrustado): se toma el tamaño propio
+        vx, vy = 0.0, 0.0
+        vw, vh = (float(re.sub(r"[^0-9.]", "", root.get(a))) for a in ("width", "height"))
+    else:
+        raise ValueError(f"{os.path.basename(path)} no tiene viewBox ni width/height")
 
     def limpiar(el):
         for hijo in list(el):
@@ -80,11 +89,11 @@ def logo_anidado(path, x, y, w, h, gid):
                 continue
             limpiar(hijo)
         for k in list(el.attrib):
-            if k.startswith("{"):
+            # se conserva xlink:href (imágenes incrustadas); se quitan los demás atributos con namespace
+            if k.startswith("{") and not k.startswith("{" + XLINK_NS):
                 del el.attrib[k]
 
     limpiar(root)
-    vx, vy, vw, vh = (float(v) for v in vb.replace(",", " ").split())
     k = min(w / vw, h / vh)                      # escala uniforme, ajustada al recuadro
     ox = x + (w - vw * k) / 2 - vx * k           # centrado dentro del recuadro
     oy = y + (h - vh * k) / 2 - vy * k
