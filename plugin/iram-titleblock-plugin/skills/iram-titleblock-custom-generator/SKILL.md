@@ -27,7 +27,7 @@ Si no existe `input-titleblocks.xlsx`, copiar la plantilla `${CLAUDE_PLUGIN_ROOT
 ## Reglas
 
 - No inventar datos. Si faltan, dejar la casilla vacía y decirlo.
-- Logos: se incrustan centrados en su celda, sin recuadro. El generador ajusta cada logo a su celda, así que no hace falta editar los SVG para cambiar el tamaño.
+- Logos: se incrustan centrados en su celda, sin recuadro. El generador ajusta cada logo a su celda, así que no hace falta editar los SVG para cambiar el tamaño. En el DXF, cada logo va como relleno de color (HATCH) con su contorno, en la capa LOGOS.
 - Escapar `&`, `<` y `>` como `&amp;`, `&lt;` y `&gt;` en los valores.
 - La denominación se dibuja en rojo, como en la referencia del cliente.
 - Si la lista de modificaciones es SI, la lámina se genera con `--mod` (agrega la lista encima del rótulo). El nombre del archivo no cambia.
