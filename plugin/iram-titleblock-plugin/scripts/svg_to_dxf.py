@@ -4,21 +4,37 @@ Uso: python svg_to_dxf.py lamina.svg
 
 - Líneas, rectángulos y círculos -> LINE / LWPOLYLINE (capa 0, color y tipo de línea ByLayer).
 - Textos del rótulo -> TEXT en Arial (capa 0): 1,7 mm; aviso legal 1 mm; títulos con su tamaño.
-- Cada logo -> relleno de color embebido (HATCH) y contorno (capa 0).
+- Cada logo vectorial -> relleno de color embebido (HATCH) y contorno (capa 0).
+- Cada logo PNG (imagen incrustada en el SVG) -> se vectoriza a color con vtracer y se rellena (HATCH, capa 0),
+  con el mismo ajuste que en el SVG. Sin vtracer el logo PNG no se incluye en el DXF.
 - Unidades: mm. El origen queda abajo-izquierda (el DXF tiene Y hacia arriba).
 """
+import hashlib
+import io
 import math
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 
 import ezdxf
 from ezdxf.colors import rgb2int
 from ezdxf.enums import TextEntityAlignment
-from svgelements import SVG, Circle, Ellipse, Path, Polygon, Rect, Shape, SimpleLine, Text
+from svgelements import SVG, Circle, Ellipse, Image, Path, Polygon, Rect, Shape, SimpleLine, Text
+
+try:
+    import vtracer
+except ImportError:  # opcional: solo hace falta para vectorizar logos PNG
+    vtracer = None
 
 PX_POR_MM = 3.779530  # svgelements convierte las medidas a px (96 dpi)
 SEGMENTOS_CURVA = 16  # puntos por segmento curvo al aproximar las formas
+SEGMENTOS_CURVA_LOGO = 3  # ídem en logos vectorizados: sus curvas son tramos de pocos píxeles
+# vectorizado de logos PNG (vtracer): color, capas apiladas, curvas suaves
+PARAMETROS_VECTORIZADO = dict(colormode="color", hierarchical="stacked", mode="spline", filter_speckle=4,
+                              color_precision=6, layer_difference=16, corner_threshold=60, length_threshold=4.0,
+                              max_iterations=10, splice_threshold=45, path_precision=3)
+FORMATOS_IMAGEN = {"image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg"}
 ALTURA_TEXTO_MM = 1.7  # altura de los textos del rótulo
 FS_ROTULO = 2.778  # font-size que genera el SVG para 2 mm
 ALTURA_LEGAL_MM = 1.0  # aviso de propiedad intelectual
@@ -48,7 +64,7 @@ def _pos_mm(e):
     return x / PX_POR_MM, y / PX_POR_MM
 
 
-def _polilineas(elemento):
+def _polilineas(elemento, segmentos=SEGMENTOS_CURVA):
     """Devuelve [(puntos_mm, cerrada), ...] para una forma (trazos y contornos)."""
     salida = []
     actual = []
@@ -80,8 +96,8 @@ def _polilineas(elemento):
             if tipo == "Line":
                 actual.append(_mm(seg.end))
             else:
-                for k in range(1, SEGMENTOS_CURVA + 1):
-                    actual.append(_mm(seg.point(k / SEGMENTOS_CURVA)))
+                for k in range(1, segmentos + 1):
+                    actual.append(_mm(seg.point(k / segmentos)))
     cerrar()
     return salida
 
@@ -203,6 +219,76 @@ def _separar_titulos(textos):
     return nuevas
 
 
+_CACHE_VECTORIZADO = {}
+_AVISOS = set()
+
+
+def _aviso(clave, texto):
+    if clave not in _AVISOS:
+        _AVISOS.add(clave)
+        print(f"aviso: {texto}", file=sys.stderr)
+
+
+def _rellenar(msp, bucles, color, y_dxf):
+    """HATCH de color (capa 0) para los contornos de una forma."""
+    for exterior, interiores in _area_relleno(bucles):
+        relleno = msp.add_hatch(dxfattribs={"layer": "0"})
+        relleno.dxf.true_color = rgb2int(color)
+        relleno.paths.add_polyline_path([(px, y_dxf(py)) for px, py in exterior], is_closed=True)
+        for hueco in interiores:
+            relleno.paths.add_polyline_path([(px, y_dxf(py)) for px, py in hueco], is_closed=True)
+
+
+def _trazar(datos, formato):
+    """Cuerpo SVG (texto) de la imagen vectorizada a color, o None si no se puede. Se guarda en caché por contenido."""
+    clave = hashlib.sha1(datos).hexdigest()
+    if clave not in _CACHE_VECTORIZADO:
+        cuerpo = None
+        if vtracer is None:
+            _aviso("vtracer", "falta vtracer (pip install vtracer): los logos PNG no se incluyen en el DXF")
+        else:
+            try:
+                svg = vtracer.convert_raw_image_to_svg(datos, img_format=formato, **PARAMETROS_VECTORIZADO)
+                cuerpo = re.search(r"<svg[^>]*>(.*)</svg>", svg, re.S).group(1)
+            except Exception as error:  # imagen dañada o formato no soportado por vtracer
+                _aviso(clave, f"no se pudo vectorizar un logo ({error})")
+        _CACHE_VECTORIZADO[clave] = cuerpo
+    return _CACHE_VECTORIZADO[clave]
+
+
+def _formas_imagen(imagen):
+    """[(forma, color)] de una imagen incrustada vectorizada, ya colocada en el documento (px).
+
+    Usa la transformación acumulada de la imagen, la misma que la ajusta a su recuadro en el SVG."""
+    datos = getattr(imagen, "data", None)
+    tipo = (getattr(imagen, "media_type", None) or [""])[0].lower()
+    if not datos:
+        return []
+    if tipo not in FORMATOS_IMAGEN:
+        _aviso(tipo, f"imagen {tipo or 'sin tipo'} no soportada para vectorizar; no se incluye en el DXF")
+        return []
+    cuerpo = _trazar(datos, FORMATOS_IMAGEN[tipo])
+    if not cuerpo:
+        return []
+    m = imagen.transform
+    envoltorio = (f'<svg xmlns="http://www.w3.org/2000/svg"><g transform="matrix('
+                  f'{m.a:.10g} {m.b:.10g} {m.c:.10g} {m.d:.10g} {m.e:.10g} {m.f:.10g})">{cuerpo}</g></svg>')
+    area_imagen = abs(float(imagen.width) * m.a) * abs(float(imagen.height) * m.d)
+    salida = []
+    for forma in SVG.parse(io.StringIO(envoltorio), reify=True).elements():
+        if not isinstance(forma, Shape) or isinstance(forma, Text):
+            continue
+        color = _relleno(forma)
+        caja = forma.bbox(transformed=True)
+        if not color or caja is None:
+            continue
+        # el fondo blanco que cubre toda la imagen no es parte del logo
+        if color == (255, 255, 255) and area_imagen and (caja[2] - caja[0]) * (caja[3] - caja[1]) >= 0.98 * area_imagen:
+            continue
+        salida.append((forma, color))
+    return salida
+
+
 def convertir(svg_path, dxf_path=None):
     dxf_path = dxf_path or os.path.splitext(svg_path)[0] + ".dxf"
     svg = SVG.parse(svg_path, reify=True)
@@ -266,6 +352,12 @@ def convertir(svg_path, dxf_path=None):
             if e.text.strip().startswith("CODIGO"):
                 x += DESPLAZAMIENTO_CODIGO_X_MM
             texto.set_placement((x, y_dxf(y) + desplazamiento), align=alineacion)
+        elif isinstance(e, Image):
+            # logo PNG: se vectoriza y se rellena, sin contorno (solo relleno de color)
+            for forma, color in _formas_imagen(e):
+                bucles = [pts for pts, _ in _polilineas(forma, SEGMENTOS_CURVA_LOGO) if len(pts) > 2]
+                if bucles:
+                    _rellenar(msp, bucles, color, y_dxf)
         elif isinstance(e, (SimpleLine, Rect, Polygon, Circle, Ellipse, Path)):
             if getattr(e, "id", None) == "papel":
                 continue
@@ -273,12 +365,7 @@ def convertir(svg_path, dxf_path=None):
                 color = _relleno(e)
                 bucles = [pts for pts, _ in _polilineas(e) if len(pts) > 2]
                 if color and bucles:
-                    for exterior, interiores in _area_relleno(bucles):
-                        relleno = msp.add_hatch(dxfattribs={"layer": "0"})
-                        relleno.dxf.true_color = rgb2int(color)
-                        relleno.paths.add_polyline_path([(px, y_dxf(py)) for px, py in exterior], is_closed=True)
-                        for hueco in interiores:
-                            relleno.paths.add_polyline_path([(px, y_dxf(py)) for px, py in hueco], is_closed=True)
+                    _rellenar(msp, bucles, color, y_dxf)
                 # contorno siempre, para que las letras blancas (p. ej. "ORD") se vean sobre el papel
                 for pts, cerrada in _polilineas(e):
                     msp.add_lwpolyline([(px, y_dxf(py)) for px, py in pts],

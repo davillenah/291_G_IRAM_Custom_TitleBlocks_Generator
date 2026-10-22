@@ -6,7 +6,7 @@ Gracias por colaborar con el generador de láminas IRAM.
 
 | Carpeta | Contenido |
 |---|---|
-| `assets/` | Logos de cliente y proveedor (`client-logo-*.svg`, `provider-logo-*.svg`) |
+| `assets/` | Logos de cliente y proveedor (`client-logo-*.svg` o `.png`, `provider-logo-*.svg` o `.png`) y `logo.png` del README |
 | `backups/` | Copias de trabajo (no versionadas) |
 | `plugin/` | Plugin empaquetable: manifiesto, scripts, skill, plantilla y paquete `.plugin` |
 | `src/` | Copia de trabajo de los scripts y del Excel de ejemplo |

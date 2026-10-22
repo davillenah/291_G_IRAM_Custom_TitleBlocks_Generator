@@ -23,9 +23,11 @@ e IRAM 4508 (rótulo), tal como las dibuja el Manual IRAM Ed. XXVII.
 Unidades mm, origen arriba-izquierda. Uso: python3 sheet-generator.py A0|A1|A2|A3|A4 [salida.svg] [--mod]
 Genera también title-block-IRAM4508.svg y modifications-block-IRAM4508.svg junto a la salida.
 """
+import base64
 import glob
-import re
 import os
+import re
+import struct
 import sys
 import xml.etree.ElementTree as ET
 
@@ -50,8 +52,10 @@ FR = 5 if CON_COORD else 0   # franja de coordenadas
 FONT = "osifont, ISOCPEUR, 'DejaVu Sans', Arial, sans-serif"
 
 # Logos: se incrustan en los recuadros del rótulo final (LOGO EMPRESA / LOGO CLIENTE).
-# provider-logo-*.svg -> recuadro de la empresa responsable del proyecto
-# client-logo-*.svg   -> recuadro del cliente
+# provider-logo-*.svg o .png -> recuadro de la empresa responsable del proyecto
+# client-logo-*.svg o .png   -> recuadro del cliente
+# Se ajustan (escala uniforme, centrados) a su recuadro. Si hay SVG y PNG del mismo prefijo, gana el SVG.
+# Un PNG se incrusta como imagen en el SVG y svg_to_dxf.py lo vectoriza para el DXF.
 # Logos: carpeta del proyecto (IRAM_PROYECTO, la fija titleblocks-generator.py); si no, la carpeta de este script
 BASE = os.environ.get("IRAM_PROYECTO") or os.path.dirname(os.path.abspath(__file__))
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -61,45 +65,67 @@ ET.register_namespace("xlink", XLINK_NS)
 
 
 def buscar_logo(prefijo):
-    """Ruta del primer <prefijo>-logo-*.svg de la carpeta del generador, o None."""
-    hallados = sorted(glob.glob(os.path.join(BASE, f"{prefijo}-logo-*.svg")))
-    if len(hallados) > 1:
-        print(f"aviso: hay varios {prefijo}-logo-*.svg; se usa {os.path.basename(hallados[0])}", file=sys.stderr)
-    return hallados[0] if hallados else None
+    """Ruta del logo <prefijo>-logo-*: el primer .svg; si no hay, el primer .png; o None."""
+    for ext in ("svg", "png"):
+        hallados = sorted(glob.glob(os.path.join(BASE, f"{prefijo}-logo-*.{ext}")))
+        if len(hallados) > 1:
+            print(f"aviso: hay varios {prefijo}-logo-*.{ext}; se usa {os.path.basename(hallados[0])}", file=sys.stderr)
+        if hallados:
+            return hallados[0]
+    return None
+
+
+def _tamano_png(path):
+    """(ancho, alto) en píxeles de un PNG, leído de su cabecera IHDR."""
+    with open(path, "rb") as f:
+        cab = f.read(24)
+    if cab[:8] != b"\x89PNG\r\n\x1a\n" or cab[12:16] != b"IHDR":
+        raise ValueError(f"{os.path.basename(path)} no es un PNG válido")
+    return struct.unpack(">II", cab[16:24])
 
 
 def logo_anidado(path, x, y, w, h, gid):
-    """Incrusta el SVG del logo como <svg> anidado en el recuadro (x, y, w, h en mm).
-    Se quitan los metadatos de Inkscape/Sodipodi, que no son SVG estándar."""
-    root = ET.parse(path).getroot()
-    vb = root.get("viewBox")
-    if vb:
-        vx, vy, vw, vh = (float(v) for v in vb.replace(",", " ").split())
-    elif root.get("width") and root.get("height"):
-        # logo sin viewBox (p. ej. PNG incrustado): se toma el tamaño propio
-        vx, vy = 0.0, 0.0
-        vw, vh = (float(re.sub(r"[^0-9.]", "", root.get(a))) for a in ("width", "height"))
+    """Incrusta el logo (SVG o PNG) ajustado al recuadro (x, y, w, h en mm): escala uniforme y centrado.
+    SVG: se anida su contenido, sin los metadatos de Inkscape/Sodipodi (no son SVG estándar).
+    PNG: se incrusta como <image> con los datos en base64; el DXF lo vectoriza."""
+    if path.lower().endswith(".png"):
+        vx = vy = 0.0
+        vw, vh = _tamano_png(path)
+        with open(path, "rb") as f:
+            datos = base64.b64encode(f.read()).decode("ascii")
+        contenido = (f'<image xmlns:xlink="{XLINK_NS}" width="{vw}" height="{vh}" '
+                     f'xlink:href="data:image/png;base64,{datos}"/>')
     else:
-        raise ValueError(f"{os.path.basename(path)} no tiene viewBox ni width/height")
+        root = ET.parse(path).getroot()
+        vb = root.get("viewBox")
+        if vb:
+            vx, vy, vw, vh = (float(v) for v in vb.replace(",", " ").split())
+        elif root.get("width") and root.get("height"):
+            # logo sin viewBox: se toma el tamaño propio
+            vx, vy = 0.0, 0.0
+            vw, vh = (float(re.sub(r"[^0-9.]", "", root.get(a))) for a in ("width", "height"))
+        else:
+            raise ValueError(f"{os.path.basename(path)} no tiene viewBox ni width/height")
 
-    def limpiar(el):
-        for hijo in list(el):
-            if not hijo.tag.startswith("{" + SVG_NS):
-                el.remove(hijo)
-                continue
-            limpiar(hijo)
-        for k in list(el.attrib):
-            # se conserva xlink:href (imágenes incrustadas); se quitan los demás atributos con namespace
-            if k.startswith("{") and not k.startswith("{" + XLINK_NS):
-                del el.attrib[k]
+        def limpiar(el):
+            for hijo in list(el):
+                if not hijo.tag.startswith("{" + SVG_NS):
+                    el.remove(hijo)
+                    continue
+                limpiar(hijo)
+            for k in list(el.attrib):
+                # se conserva xlink:href (imágenes incrustadas); se quitan los demás atributos con namespace
+                if k.startswith("{") and not k.startswith("{" + XLINK_NS):
+                    del el.attrib[k]
 
-    limpiar(root)
+        limpiar(root)
+        contenido = "".join(ET.tostring(h_, encoding="unicode").replace(f' xmlns="{SVG_NS}"', "") for h_ in root)
     k = min(w / vw, h / vh)                      # escala uniforme, ajustada al recuadro
     ox = x + (w - vw * k) / 2 - vx * k           # centrado dentro del recuadro
     oy = y + (h - vh * k) / 2 - vy * k
-    partes = [ET.tostring(h_, encoding="unicode").replace(f' xmlns="{SVG_NS}"', "") for h_ in root]
-    return (f'<g id="{gid}" transform="translate({ox:.4f} {oy:.4f}) scale({k:.6f})">'
-            + "".join(partes) + "</g>")
+    archivo = os.path.basename(path).replace("&", "&amp;").replace('"', "&quot;")
+    return (f'<g id="{gid}" data-archivo="{archivo}" transform="translate({ox:.4f} {oy:.4f}) scale({k:.6f})">'
+            + contenido + "</g>")
 
 # Espesores
 W_REC = 1.0       # recuadro (línea A, grupo d de IRAM 4502)

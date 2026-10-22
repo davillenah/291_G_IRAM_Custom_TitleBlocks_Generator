@@ -12,6 +12,22 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
 - Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
 
+## [0.5.0]
+
+### Añadido
+
+- Logos en PNG: `provider-logo-*.png` y `client-logo-*.png` se ajustan al recuadro del rótulo (escala uniforme, centrados) y se incrustan en el SVG. Se usan cuando no hay un SVG del mismo prefijo; si hay ambos, gana el SVG.
+- DXF: los logos PNG se vectorizan a color con `vtracer` (dependencia opcional) y se colocan con el mismo ajuste que en el SVG, solo con relleno de color. Sin `vtracer` el DXF sale sin ese logo y se avisa.
+
+### Cambiado
+
+- Logos DAVH: ahora `provider-logo-DAVH.png` y `client-logo-DAVH.png`, copias de `logo.png` (que se mantiene porque lo usa el README).
+- Documentación y skill: logos SVG o PNG, dependencia `vtracer` y DXF en capa 0.
+
+### Eliminado
+
+- `provider-logo-DAVH.svg` y `client-logo-DAVH.svg`, vectorizados a mano: el DXF los genera ahora desde el PNG.
+
 ## [0.4.2]
 
 ### Cambiado

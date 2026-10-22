@@ -26,26 +26,36 @@ Genera láminas IRAM A0 a A4 en SVG y DXF con rótulo personalizado (empresa, cl
 Por cada fila del Excel:
 
 - `sheet-IRAM-<formato>.svg`: lámina vectorial editable.
-- `sheet-IRAM-<formato>.dxf`: lámina para CAD, con textos en Arial, logos como relleno de color y contorno.
+- `sheet-IRAM-<formato>.dxf`: lámina para CAD, con textos en Arial y todo en la capa 0 (color y tipo de línea ByLayer). Los logos van como relleno de color; los logos PNG se vectorizan.
 
 Opcionalmente, un bloque de rótulo y uno de lista de modificaciones (`title-block-IRAM4508.svg`, `modifications-block-IRAM4508.svg`).
 
 ## 🚀 Uso como plugin
 
 1. Copiar `plugin/iram-titleblock-plugin.plugin` a tu proyecto y reinstalarlo desde Claude.
-2. Copiar a la carpeta del proyecto `input-titleblocks.xlsx` y los logos (`provider-logo-*.svg`, `client-logo-*.svg`). Si no hay Excel, el plugin trae una plantilla en `templates/`.
+2. Copiar a la carpeta del proyecto `input-titleblocks.xlsx` y los logos (`provider-logo-*.svg` o `.png`, `client-logo-*.svg` o `.png`). Si no hay Excel, el plugin trae una plantilla en `templates/`.
 3. Completar el Excel: una fila por lámina.
 4. Pedir: "generá las láminas" o "usá el plugin de rótulos IRAM".
 
 Las láminas quedan en `svg/` dentro de la carpeta del proyecto.
 
+## 🖼️ Logos
+
+El generador busca un `provider-logo-*` (recuadro de la empresa) y un `client-logo-*` (recuadro del cliente) en la carpeta de logos (`assets/`, o la del proyecto si se usa como plugin):
+
+- **SVG** (`provider-logo-*.svg`, `client-logo-*.svg`): se ajusta al recuadro del rótulo (escala uniforme, centrado) en el SVG y en el DXF.
+- **PNG** (`provider-logo-*.png`, `client-logo-*.png`): se ajusta igual y se incrusta en el SVG. Para el DXF se vectoriza a color (requiere `vtracer`).
+- Si hay SVG y PNG del mismo prefijo, se usa el SVG. Si no hay ninguno, el recuadro muestra la leyenda LOGO EMPRESA o LOGO CLIENTE.
+- `assets/logo.png` es solo la imagen del README: el generador no la usa.
+
 ## 🧰 Requisitos
 
 - Python 3.10 o superior.
-- `openpyxl`, `ezdxf`, `svgelements` y `shapely`:
+- `openpyxl`, `ezdxf`, `svgelements` y `shapely`.
+- `vtracer`, solo si usás logos PNG: sin él el logo sale en el SVG pero no en el DXF.
 
 ```bash
-pip install openpyxl ezdxf svgelements shapely
+pip install openpyxl ezdxf svgelements shapely vtracer
 ```
 
 ## 🛠️ Uso desde el repositorio
@@ -60,7 +70,7 @@ Sin `input-titleblocks.xlsx` en la carpeta actual, el script lee `src/input-titl
 
 ```
 .
-├── assets/                       Logos de cliente y proveedor
+├── assets/                       Logos de cliente y proveedor (y logo.png del README)
 ├── backups/                      Copias de trabajo (no versionadas)
 ├── plugin/
 │   ├── iram-titleblock-plugin/   Plugin: manifiesto, scripts, skill, plantilla y README

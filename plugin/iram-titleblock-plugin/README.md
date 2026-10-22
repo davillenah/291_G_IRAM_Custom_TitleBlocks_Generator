@@ -4,13 +4,14 @@ Genera láminas IRAM A0 a A4 en SVG con rótulo personalizado y logos del provee
 
 ## Uso
 
-1. Copiar `input-titleblocks.xlsx` y los logos (`provider-logo-*.svg`, `client-logo-*.svg`) a la carpeta del proyecto. Si no hay Excel, el plugin trae una plantilla en `templates/`.
+1. Copiar `input-titleblocks.xlsx` y los logos (`provider-logo-*.svg` o `.png`, `client-logo-*.svg` o `.png`) a la carpeta del proyecto. Si no hay Excel, el plugin trae una plantilla en `templates/`.
 2. Completar el Excel (una fila por lámina).
 3. Pedir: "generá las láminas" o "usá el plugin de rótulos IRAM". Las láminas quedan en `svg/` como SVG y DXF (`sheet-IRAM-A0.svg` y `sheet-IRAM-A0.dxf`, etc.).
 
 ## Requisitos
 
 - Python 3 con `openpyxl`, `ezdxf`, `svgelements` y `shapely` (`pip install openpyxl ezdxf svgelements shapely`).
+- `vtracer` (`pip install vtracer`), solo si usás logos PNG: se vectorizan para el DXF.
 
 ## Estructura
 

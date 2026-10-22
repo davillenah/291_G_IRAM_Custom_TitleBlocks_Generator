@@ -1,6 +1,6 @@
 ---
 name: iram-titleblock-custom-generator
-description: Genera láminas IRAM A0 a A4 en SVG con rótulo personalizado (empresa, cliente, proyectado/verificado/validado, códigos y hoja/estado/revisión) e incrusta los logos provider-logo-*.svg y client-logo-*.svg, a partir de input-titleblocks.xlsx. Usar cuando el usuario pida generar láminas, rótulos IRAM, planos A0-A4 o actualizar los logos del rótulo.
+description: Genera láminas IRAM A0 a A4 en SVG con rótulo personalizado (empresa, cliente, proyectado/verificado/validado, códigos y hoja/estado/revisión) e incrusta los logos provider-logo-*.svg o .png y client-logo-*.svg o .png, a partir de input-titleblocks.xlsx. Usar cuando el usuario pida generar láminas, rótulos IRAM, planos A0-A4 o actualizar los logos del rótulo.
 ---
 
 # Láminas IRAM con rótulo personalizado
@@ -10,8 +10,8 @@ Trabajar en la carpeta del proyecto del usuario (la que contiene `input-titleblo
 ## Archivos del proyecto
 
 - `input-titleblocks.xlsx`: única fuente de datos. Una fila por lámina, hoja "Láminas".
-- `provider-logo-*.svg`: logo de la empresa responsable. Va en el recuadro LOGO EMPRESA.
-- `client-logo-*.svg`: logo del cliente. Va en el recuadro LOGO CLIENTE.
+- `provider-logo-*.svg` o `.png`: logo de la empresa responsable. Va en el recuadro LOGO EMPRESA.
+- `client-logo-*.svg` o `.png`: logo del cliente. Va en el recuadro LOGO CLIENTE.
 - `svg/`: salida. Por cada lámina se genera `sheet-IRAM-<formato>.svg` y `sheet-IRAM-<formato>.dxf` (para CAD). Se borra y se regenera en cada corrida.
 
 Si no existe `input-titleblocks.xlsx`, copiar la plantilla `${CLAUDE_PLUGIN_ROOT}/templates/input-titleblocks.xlsx` al proyecto.
@@ -27,7 +27,7 @@ Si no existe `input-titleblocks.xlsx`, copiar la plantilla `${CLAUDE_PLUGIN_ROOT
 ## Reglas
 
 - No inventar datos. Si faltan, dejar la casilla vacía y decirlo.
-- Logos: se incrustan centrados en su celda, sin recuadro. El generador ajusta cada logo a su celda, así que no hace falta editar los SVG para cambiar el tamaño. En el DXF, cada logo va como relleno de color (HATCH) con su contorno, en la capa LOGOS.
+- Logos: se incrustan centrados en su celda, sin recuadro. El generador ajusta cada logo a su celda, así que no hace falta editar los SVG para cambiar el tamaño. En el DXF todo va en la capa 0 (ByLayer): el logo SVG como relleno de color con su contorno; el logo PNG se vectoriza a color (necesita `vtracer`) y va solo como relleno. Si hay SVG y PNG del mismo prefijo, se usa el SVG.
 - Escapar `&`, `<` y `>` como `&amp;`, `&lt;` y `&gt;` en los valores.
 - La denominación se dibuja en rojo, como en la referencia del cliente.
 - Si la lista de modificaciones es SI, la lámina se genera con `--mod` (agrega la lista encima del rótulo). El nombre del archivo no cambia.
