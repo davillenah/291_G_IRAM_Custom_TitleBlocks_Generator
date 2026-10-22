@@ -12,6 +12,13 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
 - Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
 
+## [0.4.0]
+
+### Cambiado
+
+- Eliminadas las señales de centrado de 0,5 mm (IRAM 4504, 2.4.1) de todas las láminas. Se mantiene la flecha de orientación.
+- DXF: todas las entidades quedan en la capa `0`, con color y tipo de línea ByLayer. Se eliminan las capas `LINEAS`, `TEXTO` y `LOGOS`. Los logos conservan su color embebido en el relleno.
+
 ## [0.3.0]
 
 ### Añadido

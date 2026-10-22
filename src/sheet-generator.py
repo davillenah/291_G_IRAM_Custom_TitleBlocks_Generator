@@ -15,8 +15,7 @@ e IRAM 4508 (rótulo), tal como las dibuja el Manual IRAM Ed. XXVII.
   abajo hacia arriba. Abajo y a la derecha van girados, como en la fig. 6.
 - Escala de comparación de 200 mm sin cifras, a 10 mm del borde izquierdo,
   arriba (2.3.4, fig. 7).
-- Señales de centrado de 0,5 mm desde el borde hasta 5 mm dentro de la zona útil (2.4.1, fig. 8).
-- Flecha de orientación sobre la señal inferior, hacia el dibujante (2.5, fig. 6).
+- Flecha de orientación en el borde inferior, hacia el dibujante (2.5, fig. 6).
 - Rótulo IRAM 4508 fig. 2 (175 x 51) como bloque propio. La lista de modificaciones
   fig. 3 (175 x 21,5) es otro bloque, aparte, que se coloca encima sólo si hace falta
   (posición en data-modificaciones del <svg>).
@@ -96,7 +95,6 @@ def logo_anidado(path, x, y, w, h, gid):
 # Espesores
 W_REC = 1.0       # recuadro (línea A, grupo d de IRAM 4502)
 W_UTIL = 0.5      # límite de la zona útil y divisiones de coordenadas
-W_CENT = 0.5      # señales de centrado (4504 2.4.1)
 W_08, W_04, W_02 = 0.8, 0.4, 0.2  # rótulo (4508 fig. 2)
 
 out = []
@@ -172,14 +170,8 @@ if CON_COORD:  # el A4 de la fig. 6 no la lleva
         line("escala_comparacion", 10, y0 + k, 15, y0 + k, W_02)
     line("escala_comparacion", 15, y0, 15, y0 + 200, W_02)
 
-# ---------------- señales de centrado y flecha ----------------
+# ---------------- flecha de orientación ----------------
 cx, cy = W / 2, H / 2
-line("centrado", cx, 0, cx, v0 + 5, W_CENT)
-# marca inferior de centrado: no se dibuja si cae sobre el rótulo (ancho 175 mm, alineado a la derecha)
-if not (u1 - 175 <= cx <= u1):
-    line("centrado", cx, H, cx, v1 - 5, W_CENT)
-line("centrado", 0, cy, u0 + 5, cy, W_CENT)
-line("centrado", W, cy, u1 - 5, cy, W_CENT)
 # Flecha de orientación (detalle fig. 6): triángulo de ~6 mm con el vértice
 # en el recuadro, parte superior llena sobre el límite de la zona útil.
 if CON_COORD:  # el A4 de la fig. 6 no la lleva
@@ -383,7 +375,6 @@ estilos = {
     "recuadro": 'stroke="#000" stroke-linecap="square"',
     "coordenadas": 'stroke="#000" fill="#000"',
     "escala_comparacion": 'stroke="#000"',
-    "centrado": 'stroke="#000"',
     "orientacion": 'stroke="#000"',
     "rotulo": 'stroke="#000" stroke-linecap="square"',
     "rotulo_txt": 'fill="#000"',

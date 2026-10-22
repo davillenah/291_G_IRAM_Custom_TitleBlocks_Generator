@@ -2,9 +2,9 @@
 
 Uso: python svg_to_dxf.py lamina.svg
 
-- Líneas, rectángulos y círculos -> LINE / LWPOLYLINE (capa LINEAS).
-- Textos del rótulo -> TEXT en Arial (capa TEXTO): 1,7 mm; aviso legal 1 mm; títulos con su tamaño.
-- Cada logo -> relleno de color embebido (HATCH) y contorno (capa LOGOS).
+- Líneas, rectángulos y círculos -> LINE / LWPOLYLINE (capa 0, color y tipo de línea ByLayer).
+- Textos del rótulo -> TEXT en Arial (capa 0): 1,7 mm; aviso legal 1 mm; títulos con su tamaño.
+- Cada logo -> relleno de color embebido (HATCH) y contorno (capa 0).
 - Unidades: mm. El origen queda abajo-izquierda (el DXF tiene Y hacia arriba).
 """
 import math
@@ -236,9 +236,6 @@ def convertir(svg_path, dxf_path=None):
     doc = ezdxf.new("R2010")
     doc.header["$INSUNITS"] = 4  # milímetros
     doc.styles.add(ESTILO_TEXTO, font=FUENTE)
-    doc.layers.add("LINEAS")
-    doc.layers.add("TEXTO")
-    doc.layers.add("LOGOS")
     msp = doc.modelspace()
 
     def y_dxf(y):
@@ -260,7 +257,7 @@ def convertir(svg_path, dxf_path=None):
             else:
                 alto = fs
             angulo = math.degrees(math.atan2(e.transform.b, e.transform.a))
-            texto = msp.add_text(e.text, dxfattribs={"height": alto, "layer": "TEXTO",
+            texto = msp.add_text(e.text, dxfattribs={"height": alto, "layer": "0",
                                                      "rotation": -angulo, "style": ESTILO_TEXTO})
             alineacion = ALINEACION.get(str(e.values.get("text-anchor", "start")), TextEntityAlignment.BOTTOM_LEFT)
             if abs(fs - FS_LEGAL) < 0.01:
@@ -277,7 +274,7 @@ def convertir(svg_path, dxf_path=None):
                 bucles = [pts for pts, _ in _polilineas(e) if len(pts) > 2]
                 if color and bucles:
                     for exterior, interiores in _area_relleno(bucles):
-                        relleno = msp.add_hatch(color=7, dxfattribs={"layer": "LOGOS"})
+                        relleno = msp.add_hatch(dxfattribs={"layer": "0"})
                         relleno.dxf.true_color = rgb2int(color)
                         relleno.paths.add_polyline_path([(px, y_dxf(py)) for px, py in exterior], is_closed=True)
                         for hueco in interiores:
@@ -285,15 +282,15 @@ def convertir(svg_path, dxf_path=None):
                 # contorno siempre, para que las letras blancas (p. ej. "ORD") se vean sobre el papel
                 for pts, cerrada in _polilineas(e):
                     msp.add_lwpolyline([(px, y_dxf(py)) for px, py in pts],
-                                       close=cerrada, dxfattribs={"layer": "LOGOS"})
+                                       close=cerrada, dxfattribs={"layer": "0"})
                 continue
             for puntos, cerrada in _polilineas(e):
                 if len(puntos) == 2 and not cerrada:
                     (x1, y1), (x2, y2) = puntos
-                    msp.add_line((x1, y_dxf(y1)), (x2, y_dxf(y2)), dxfattribs={"layer": "LINEAS"})
+                    msp.add_line((x1, y_dxf(y1)), (x2, y_dxf(y2)), dxfattribs={"layer": "0"})
                 else:
                     msp.add_lwpolyline([(x, y_dxf(y)) for x, y in puntos],
-                                       close=cerrada, dxfattribs={"layer": "LINEAS"})
+                                       close=cerrada, dxfattribs={"layer": "0"})
 
     doc.saveas(dxf_path)
     return dxf_path
