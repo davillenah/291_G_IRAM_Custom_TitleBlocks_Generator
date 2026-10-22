@@ -21,12 +21,8 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ### Cambiado
 
-- Logos DAVH: ahora `provider-logo-DAVH.png` y `client-logo-DAVH.png`, copias de `logo.png` (que se mantiene porque lo usa el README).
+- Logos DAVH: se agregan `provider-logo-DAVH.png` y `client-logo-DAVH.png`, copias de `logo.png` (que se mantiene porque lo usa el README), y se conservan los SVG vectorizados.
 - Documentación y skill: logos SVG o PNG, dependencia `vtracer` y DXF en capa 0.
-
-### Eliminado
-
-- `provider-logo-DAVH.svg` y `client-logo-DAVH.svg`, vectorizados a mano: el DXF los genera ahora desde el PNG.
 
 ## [0.4.2]
 
