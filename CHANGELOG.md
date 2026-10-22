@@ -1,0 +1,37 @@
+# Changelog
+
+Todos los cambios notables de este proyecto se documentan en este archivo.
+
+El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
+y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
+
+## [Unreleased]
+
+### Pendiente
+
+- Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
+- Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
+
+## [0.3.0]
+
+### Añadido
+
+- Salida DXF por lámina (`sheet-IRAM-A0.dxf` … `sheet-IRAM-A4.dxf`), con textos en Arial, capa `TEXTO` y capa `LOGOS`.
+- Logos del proveedor y del cliente embebidos en el DXF como relleno de color (HATCH) con su contorno.
+- Lista de modificaciones opcional por lámina (columna "Lista de modificaciones" del Excel).
+
+### Cambiado
+
+- Los textos fijos del rótulo se fuerzan a 2 mm, en mayúscula y negrita, salvo el aviso legal, el título y el tipo de plano.
+- Logos escalados y centrados en su celda, sin contorno.
+- Nombres de archivo en kebab-case; nombres de salida `sheet-IRAM-<formato>.svg`, sin sufijo `-mod`.
+- Estructura del proyecto: `assets/`, `backups/`, `plugin/`, `src/`, `test/`, `vendor/`.
+
+### Eliminado
+
+- Previsualizaciones PNG.
+- Línea de centrado inferior que tapaba el rótulo A4.
+
+## [0.1.0]
+
+- Versión inicial sin historial detallado.

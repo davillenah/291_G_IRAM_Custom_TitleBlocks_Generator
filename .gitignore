@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Salidas generadas (se regeneran en cada corrida)
+test/
+svg/
+
+# Copias de trabajo y respaldos
+backups/
+*.bak
+*.bak.*
+*.orig
+
+# Archivos temporales de Office
+~$*.xlsx
+
+# Sistema
+.DS_Store
+Thumbs.db

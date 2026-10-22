@@ -1,0 +1,15 @@
+{
+  "name": "iram-titleblock-plugin",
+  "version": "0.3.0",
+  "description": "Genera láminas IRAM A0 a A4 en SVG con rótulo personalizado y logos (proveedor y cliente) a partir de input-titleblocks.xlsx.",
+  "author": {
+    "name": "Ingeniero Villena"
+  },
+  "keywords": [
+    "IRAM",
+    "rotulo",
+    "lamina",
+    "SVG",
+    "electrica"
+  ]
+}
