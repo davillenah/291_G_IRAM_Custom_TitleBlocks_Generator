@@ -74,6 +74,7 @@ Sin `input-titleblocks.xlsx` en la carpeta actual, el script lee `src/input-titl
 
 - [CHANGELOG.md](CHANGELOG.md): historial de versiones.
 - [CONTRIBUTING.md](CONTRIBUTING.md): cómo colaborar y convenciones de commits.
+- [CONTRIBUTORS.md](CONTRIBUTORS.md): quiénes participaron en el proyecto.
 
 ## 📜 Licencia
 
