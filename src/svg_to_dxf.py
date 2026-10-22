@@ -160,7 +160,10 @@ def _logos(svg_path, formas):
         if not nombre:
             continue
         omitir.add(id(e))
-        x0, y0, x1, y1 = e.bbox(transformed=True)
+        caja_forma = e.bbox(transformed=True)
+        if caja_forma is None:  # forma sin área (p. ej. path vacío de un trazado): no aporta a la caja
+            continue
+        x0, y0, x1, y1 = caja_forma
         caja = cajas.get(nombre, [x0, y0, x1, y1])
         cajas[nombre] = [min(caja[0], x0), min(caja[1], y0), max(caja[2], x1), max(caja[3], y1)]
     return {k: [v / PX_POR_MM for v in caja] for k, caja in cajas.items()}, omitir

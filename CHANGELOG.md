@@ -12,6 +12,12 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 - Unificar `src/` y `plugin/iram-titleblock-plugin/scripts/`: hoy hay copias duplicadas de los scripts.
 - Corregir las rutas fijas que quedaron en los scripts de ejemplo, si aparecen.
 
+## [0.5.1]
+
+### Corregido
+
+- El conversor a DXF fallaba si un logo tenía paths vacíos (sin área): esas formas se ignoran ahora.
+
 ## [0.5.0]
 
 ### Añadido
